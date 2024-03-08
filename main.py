@@ -3,7 +3,7 @@ import random
 import requests
 import time
 import json
-import traceback
+import logging
 from typing import List, Dict, Tuple
 
 # Configuration variables
@@ -21,6 +21,10 @@ REQUEST_TIMEOUT = int(os.environ.get("REQUEST_TIMEOUT", 5))
 MAX_USERNAMES = int(os.environ.get("MAX_USERNAMES", 100))
 MAX_MESSAGE_LENGTH = int(os.environ.get("MAX_MESSAGE_LENGTH", 2000))
 MAX_DISCORD_NOTIFICATIONS = int(os.environ.get("MAX_DISCORD_NOTIFICATIONS", 10))
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Message formats
 MESSAGE_FORMATS = {
@@ -43,8 +47,7 @@ def is_username_available(username: str) -> bool:
         response = requests.get(f"https://api.mojang.com/users/profiles/minecraft/{username}", timeout=REQUEST_TIMEOUT)
         return response.status_code == 404
     except requests.exceptions.RequestException as e:
-        print(f"Error checking username availability for {username}: {str(e)}")
-        send_error_notification(f"Error checking username availability for {username}: {str(e)}")
+        logger.error(f"Error checking username availability for {username}: {str(e)}")
         return False
 
 def send_discord_notification(webhook_url: str, message: str) -> None:
@@ -54,16 +57,9 @@ def send_discord_notification(webhook_url: str, message: str) -> None:
         response = requests.post(webhook_url, json=payload, timeout=REQUEST_TIMEOUT)
         
         if response.status_code != 204:
-            print(f"Failed to send Discord notification. Status code: {response.status_code}")
+            logger.warning(f"Failed to send Discord notification. Status code: {response.status_code}")
     except requests.exceptions.RequestException as e:
-        print(f"Error sending Discord notification: {str(e)}")
-
-def send_error_notification(error_message: str) -> None:
-    webhook_url = os.environ.get("ERROR_WEBHOOK_URL", "")
-    
-    if webhook_url:
-        message = f"An error occurred:\n```\n{error_message}\n```"
-        send_discord_notification(webhook_url, message)
+        logger.error(f"Error sending Discord notification: {str(e)}")
 
 def get_random_message(discord_user_id: str, usernames: List[str], message_type: str) -> str:
     num_usernames = len(usernames)
@@ -93,8 +89,7 @@ def save_available_usernames(available_usernames: Dict[str, int], file_path: str
         with open(file_path, 'w') as file:
             json.dump(available_usernames, file, indent=2)
     except IOError as e:
-        print(f"Error saving available usernames: {str(e)}")
-        send_error_notification(f"Error saving available usernames: {str(e)}")
+        logger.error(f"Error saving available usernames: {str(e)}")
 
 def check_usernames(usernames: List[str], webhook_url: str, discord_user_id: str, available_usernames_file: str) -> Tuple[List[str], List[str]]:
     available_usernames = load_available_usernames(available_usernames_file)
@@ -152,33 +147,33 @@ def check_grace_period(webhook_url: str, discord_user_id: str, available_usernam
                 
     save_available_usernames(available_usernames, available_usernames_file)
     
-    print_status(initial_stage, thirty_day_stage, thirty_seven_day_stage, taken_usernames, available_usernames, all_taken_usernames)
+    log_status(initial_stage, thirty_day_stage, thirty_seven_day_stage, taken_usernames, available_usernames, all_taken_usernames)
 
-def print_status(initial_stage: List[str], thirty_day_stage: List[str], thirty_seven_day_stage: List[str],
-                 taken_usernames: List[str], available_usernames: Dict[str, int], all_taken_usernames: List[str]) -> None:
-    print("=" * 80)
-    print("Minecraft Username Checker Status".center(80))
-    print("=" * 80)
+def log_status(initial_stage: List[str], thirty_day_stage: List[str], thirty_seven_day_stage: List[str],
+               taken_usernames: List[str], available_usernames: Dict[str, int], all_taken_usernames: List[str]) -> None:
+    logger.info("=" * 80)
+    logger.info("Minecraft Username Checker Status".center(80))
+    logger.info("=" * 80)
     
-    print("\nTaken Usernames:")
+    logger.info("\nTaken Usernames:")
     for username in all_taken_usernames:
-        print(f"- {username}")
+        logger.info(f"- {username}")
     
-    print("\nInitial Stage (0-30 days):")
+    logger.info("\nInitial Stage (0-30 days):")
     for username in initial_stage:
         days_left, hours_left, minutes_left = get_time_left(THIRTY_DAY_DELAY, available_usernames[username])
-        print(f"- {username} (Days left: {days_left}, Hours left: {hours_left}, Minutes left: {minutes_left})")
+        logger.info(f"- {username} (Days left: {days_left}, Hours left: {hours_left}, Minutes left: {minutes_left})")
         
-    print("\n30-Day Stage (30-37 days):")
+    logger.info("\n30-Day Stage (30-37 days):")
     for username in thirty_day_stage:
         days_left, hours_left, minutes_left = get_time_left(THIRTY_SEVEN_DAY_DELAY, available_usernames[username])
-        print(f"- {username} (Days left: {days_left}, Hours left: {hours_left}, Minutes left: {minutes_left})")
+        logger.info(f"- {username} (Days left: {days_left}, Hours left: {hours_left}, Minutes left: {minutes_left})")
         
-    print("\n37-Day Stage (Available for claiming):")
+    logger.info("\n37-Day Stage (Available for claiming):")
     for username in thirty_seven_day_stage:
-        print(f"- {username}")
+        logger.info(f"- {username}")
         
-    print("=" * 80)
+    logger.info("=" * 80)
 
 def get_time_left(delay: int, start_time: int) -> Tuple[int, int, int]:
     time_left = delay - (int(time.time()) - start_time)
@@ -189,6 +184,7 @@ def get_time_left(delay: int, start_time: int) -> Tuple[int, int, int]:
 
 def main() -> None:
     available_usernames_file = os.environ.get("AVAILABLE_USERNAMES_FILE", "/app/available_usernames.json")
+    build_mode = os.environ.get("BUILD", "0") == "1"
     
     mojang_api_requests = 0
     discord_api_requests = 0
@@ -214,11 +210,13 @@ def main() -> None:
             check_grace_period(WEBHOOK_URL, DISCORD_USER_ID, available_usernames_file, all_taken_usernames)
             discord_api_requests += 1
             
+            if build_mode:
+                logger.info("Build mode enabled. Exiting after one pass.")
+                break
+            
             time.sleep(CHECK_INTERVAL)
         except Exception as e:
-            error_message = f"An unexpected error occurred:\n```\n{traceback.format_exc()}\n```"
-            print(error_message)
-            send_error_notification(error_message)
+            logger.exception(f"An unexpected error occurred: {str(e)}")
             time.sleep(CHECK_INTERVAL)
 
 if __name__ == "__main__":
