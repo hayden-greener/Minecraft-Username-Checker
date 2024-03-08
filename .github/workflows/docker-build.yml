@@ -1,0 +1,21 @@
+name: Docker Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: docker build -t minecraft-username-checker .
+
+      - name: Run Docker Compose
+        run: |
+          docker-compose up -d
+          docker-compose logs -f
