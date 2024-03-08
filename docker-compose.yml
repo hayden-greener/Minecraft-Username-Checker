@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  minecraft-username-checker:
+    build: .
+    environment:
+      - MINECRAFT_USERNAMES="username1,username2"
+      - DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/XXXXXX"
+      - DISCORD_USER_ID="XXXXXX"
+    volumes:
+      - ./available_usernames.json:/app/available_usernames.json
