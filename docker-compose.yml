@@ -4,8 +4,9 @@ services:
   minecraft-username-checker:
     build: .
     environment:
-      - MINECRAFT_USERNAMES=<your_usernames_here>
-      - DISCORD_WEBHOOK_URL=<your_discord_webhook_url_here>
-      - DISCORD_USER_ID=<your_discord_user_id_here>
+      - MINECRAFT_USERNAMES=${MINECRAFT_USERNAMES}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - DISCORD_USER_ID=${DISCORD_USER_ID}
+      - BUILD=1 # remove this line
     volumes:
-      - ./local/path:/container/path
+      - ./:/app/
