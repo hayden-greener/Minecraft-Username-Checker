@@ -12,10 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Build Docker image
-        run: docker build -t minecraft-username-checker .
-
       - name: Run Docker Compose
         run: |
-          docker-compose up -d
+          docker-compose up --build -d
           docker-compose logs -f
