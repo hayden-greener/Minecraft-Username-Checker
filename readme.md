@@ -1,18 +1,35 @@
 # Minecraft Username Checker
 
-This Python script checks the availability of Minecraft usernames and sends notifications via Discord webhooks when usernames become available. It also handles the 30-day grace period before usernames are actually released and notifies the user if a username is retaken during that period.
+This Python script checks the availability of Minecraft usernames and sends notifications to Discord when a username becomes available or enters different stages of the 37-day grace period.
 
 ## Features
 
-- Checks the availability of Minecraft usernames using the Mojang API
-- Sends notifications to a Discord webhook when usernames become available
-- Generates random notification messages with emojis and username mentions
-- Handles rate limiting for the Mojang API and Discord API
-- Stores available usernames and their timestamps in a JSON file
-- Checks the grace period for previously available usernames and sends notifications accordingly
-- Notifies the user if a username is retaken during the grace period
-- Provides a professional and user-friendly command-line interface
+- Checks the availability of specified Minecraft usernames
+- Sends Discord notifications when a username becomes available
+- Provides updates at different stages of the 37-day grace period
+- Customizable configuration through environment variables
+- Docker support for easy deployment
 
-## Setup
+## Configuration
 
-1. Clone the repository:
+The script uses environment variables for configuration. You can set the following variables:
+
+- `MINECRAFT_USERNAMES`: Comma-separated list of Minecraft usernames to check
+- `DISCORD_WEBHOOK_URL`: Discord webhook URL for sending notifications
+- `DISCORD_USER_ID`: Discord user ID to mention in notifications
+
+## Usage with Docker
+
+```yaml
+version: '3'
+
+services:
+  minecraft-username-checker:
+    image: ghcr.io/itslightmind/minecraft-username-checker:latest
+    environment:
+      - MINECRAFT_USERNAMES=username1,username2
+      - DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/XXXX/XXXX"
+      - DISCORD_USER_ID="YOUR_USER_ID"
+    volumes:
+      - ./available_usernames.json:/app/available_usernames.json
+```
