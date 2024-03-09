@@ -183,7 +183,7 @@ def get_time_left(delay: int, start_time: int) -> Tuple[int, int, int]:
     return days_left, hours_left, minutes_left
 
 def main() -> None:
-    available_usernames_file = os.environ.get("AVAILABLE_USERNAMES_FILE", "/app/available_usernames.json")
+    available_usernames_file = os.environ.get("AVAILABLE_USERNAMES_FILE", "/app/data/available_usernames.json")
     build_mode = os.environ.get("BUILD", "0") == "1"
     
     mojang_api_requests = 0
