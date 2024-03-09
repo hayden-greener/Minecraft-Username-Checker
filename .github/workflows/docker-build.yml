@@ -22,8 +22,8 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
         run: |
           docker build . --file Dockerfile --tag ghcr.io/itslightmind/minecraft-username-checker:latest --tag ghcr.io/itslightmind/minecraft-username-checker:$GITHUB_SHA
-          docker push ghcr.io/itslightmind/jncep-web-service:latest
-          docker push ghcr.io/itslightmind/jncep-web-service:$GITHUB_SHA
+          docker push ghcr.io/itslightmind/minecraft-username-checker:latest
+          docker push ghcr.io/itslightmind/minecraft-username-checker:$GITHUB_SHA
       
       - name: Run Docker Compose
         env:
